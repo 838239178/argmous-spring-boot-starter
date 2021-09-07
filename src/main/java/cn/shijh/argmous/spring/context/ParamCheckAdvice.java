@@ -14,8 +14,10 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cache.Cache;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -33,6 +35,9 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
 
     private ArrayValidationManager arrayValidationManager;
 
+    private Cache cache;
+
+    //region setter
     public void setOrder(int order) {
         this.order = order;
     }
@@ -45,9 +50,14 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
         this.validationManager = validationManager;
     }
 
+    public void setCache(Cache cache) {
+        this.cache = cache;
+    }
+
     public void setArrayValidationManager(ArrayValidationManager arrayValidationManager) {
         this.arrayValidationManager = arrayValidationManager;
     }
+    //endregion
 
     @Pointcut("@annotation(ParamCheck)")
     public void pointCut() {
@@ -69,20 +79,29 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
     private Collection<ValidationRule> getValidationRules(ParamCheck[] paramChecks) {
         Collection<ValidationRule> rules = new ArrayList<>(paramChecks.length);
         for (ParamCheck paramCheck : paramChecks) {
-            ValidationRule validationRule = new ValidationRule();
-            AnnotationBeanUtils.copyProperties(paramCheck, validationRule);
+            ValidationRule validationRule = getRuleFromAnnotation(paramCheck);
             rules.add(validationRule);
         }
         return rules;
     }
 
-    private ValidationRule getValidationRule(JoinPoint jp) {
-        Annotation annotation = getAnnotation(jp, ParamCheck.class);
+    private ValidationRule getRuleFromAnnotation(ParamCheck annotation) {
         ValidationRule validationRule = new ValidationRule();
         if (annotation != null) {
             AnnotationBeanUtils.copyProperties(annotation, validationRule);
         }
         return validationRule;
+    }
+
+    private ValidationRule getValidationRule(JoinPoint jp) {
+        String name = jp.getSignature().getName();
+        ValidationRule cacheRule = cache.get(name, ValidationRule.class);
+        if (cacheRule == null) {
+            ParamCheck annotation = getAnnotation(jp, ParamCheck.class);
+            cacheRule =  getRuleFromAnnotation(annotation);
+            cache.put(name, cacheRule);
+        }
+        return cacheRule;
     }
 
     private boolean isSpringObject(Object arg) {
