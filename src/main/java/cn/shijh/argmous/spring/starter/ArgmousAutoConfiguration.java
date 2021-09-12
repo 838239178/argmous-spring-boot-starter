@@ -1,9 +1,17 @@
 package cn.shijh.argmous.spring.starter;
 
 
+import cn.shijh.argmous.factory.ValidationRuleFactory;
+import cn.shijh.argmous.factory.rule.DefaultValidationRuleFactory;
 import cn.shijh.argmous.manager.validation.ArrayValidationManager;
 import cn.shijh.argmous.manager.validation.ValidationManager;
+import cn.shijh.argmous.manager.validator.ValidatorManager;
+import cn.shijh.argmous.service.ArgmousService;
+import cn.shijh.argmous.service.impl.ArgmousServiceImpl;
+import cn.shijh.argmous.spring.cache.NoCacheManager;
 import cn.shijh.argmous.spring.context.ParamCheckAdvice;
+import cn.shijh.argmous.spring.context.SpringArgumentInfoFactory;
+import cn.shijh.argmous.spring.context.SpringArgumentInfoFactoryImpl;
 import cn.shijh.argmous.spring.properties.ArgmousProperties;
 
 import org.springframework.beans.factory.ObjectFactory;
@@ -26,18 +34,15 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(ArgmousProperties.class)
 @AutoConfigureAfter(ValidationAutoConfiguration.class)
 public class ArgmousAutoConfiguration {
-    private final ApplicationContext applicationContext;
     private final ArgmousProperties properties;
     private final ValidationManager validationManager;
     private final ArrayValidationManager arrayValidationManager;
     private final ObjectProvider<CacheManager> cacheManager;
 
-    public ArgmousAutoConfiguration(ApplicationContext applicationContext,
-                                    ArgmousProperties properties,
+    public ArgmousAutoConfiguration(ArgmousProperties properties,
                                     ObjectProvider<ValidationManager> validationManager,
                                     ObjectProvider<ArrayValidationManager> arrayValidationManager,
                                     ObjectProvider<CacheManager> cacheManager) {
-        this.applicationContext = applicationContext;
         this.properties = properties;
         this.validationManager = validationManager.getIfAvailable();
         this.arrayValidationManager = arrayValidationManager.getIfAvailable();
@@ -45,23 +50,40 @@ public class ArgmousAutoConfiguration {
     }
 
     @Bean
-    public ParamCheckAdvice paramCheckAdvice() {
+    public ArgmousService argmousService() {
+        return new ArgmousServiceImpl(validationManager, arrayValidationManager);
+    }
+
+    @Bean
+    public SpringArgumentInfoFactory springArgumentInfoFactory() {
+        return new SpringArgumentInfoFactoryImpl();
+    }
+
+    @Bean
+    public ValidationRuleFactory validationRuleFactory() {
+        return new DefaultValidationRuleFactory();
+    }
+
+    @Bean
+    public ParamCheckAdvice paramCheckAdvice(ArgmousService argmousService,
+                                             SpringArgumentInfoFactory argumentInfoFactory,
+                                             ValidationRuleFactory validationRuleFactory) {
         ParamCheckAdvice advice = new ParamCheckAdvice();
-        advice.setApplicationContext(applicationContext);
-        advice.setArrayValidationManager(arrayValidationManager);
-        advice.setValidationManager(validationManager);
+        advice.setArgmousService(argmousService);
+        advice.setArgumentInfoFactory(argumentInfoFactory);
+        advice.setValidationRuleFactory(validationRuleFactory);
+
         if (properties.getOrder() != null) {
             advice.setOrder(properties.getOrder());
         }
-        cacheManager.ifAvailable(cm->{
-            String cacheName = properties.getCacheName();
-            if (cacheName == null || cacheName.isEmpty()) {
-                cacheName = "argmous:spring:cache";
-            }
-            advice.setCache(cm.getCache(cacheName));
-        });
+
+        CacheManager availableCacheManager = cacheManager.getIfAvailable(NoCacheManager::new);
+        String cacheName = properties.getCacheName();
+        if (cacheName == null || cacheName.isEmpty()) {
+            cacheName = "argmous:spring:cache";
+        }
+        advice.setCache(availableCacheManager.getCache(cacheName));
+
         return advice;
     }
-
-
 }

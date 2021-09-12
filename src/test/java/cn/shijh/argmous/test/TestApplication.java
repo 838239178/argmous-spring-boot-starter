@@ -1,8 +1,6 @@
 package cn.shijh.argmous.test;
 
 import cn.shijh.argmous.exception.ParamCheckException;
-import cn.shijh.argmous.spring.context.ParamCheck;
-import cn.shijh.argmous.spring.context.ParamChecks;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +22,6 @@ public class TestApplication {
     }
 
     @GetMapping("/test")
-    @ParamChecks({
-            @ParamCheck(include = "s", size = {1,3}),
-            @ParamCheck(include = "i", range = {"0","5"})
-    })
     public String testValidate(String s, Integer i) {
         return "success";
     }

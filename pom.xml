@@ -6,11 +6,11 @@
 
     <groupId>cn.shijh</groupId>
     <artifactId>argmous-spring-boot-starter</artifactId>
-    <version>1.0.1-BETA</version>
+    <version>1.0.2-BETA</version>
 
     <properties>
         <java.version>1.8</java.version>
-        <argmous.version>1.0.1-BETA</argmous.version>
+        <argmous.version>1.0.2-BETA</argmous.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>2.3.7.RELEASE</spring-boot.version>

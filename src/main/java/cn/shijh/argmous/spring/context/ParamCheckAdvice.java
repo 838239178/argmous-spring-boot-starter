@@ -1,12 +1,20 @@
 package cn.shijh.argmous.spring.context;
 
+import cn.shijh.argmous.annotation.ArrayParamCheck;
+import cn.shijh.argmous.annotation.ParamCheck;
+import cn.shijh.argmous.annotation.ParamChecks;
 import cn.shijh.argmous.exception.ParamCheckException;
+import cn.shijh.argmous.factory.ArgumentInfoFactory;
+import cn.shijh.argmous.factory.ValidationRuleFactory;
 import cn.shijh.argmous.manager.validation.ArrayValidationManager;
 import cn.shijh.argmous.manager.validation.ValidationManager;
 import cn.shijh.argmous.model.ArgumentInfo;
 import cn.shijh.argmous.model.ValidationRule;
-import cn.shijh.argmous.spring.utils.AnnotationBeanUtils;
-import cn.shijh.argmous.spring.utils.ArgumentUtils;
+import cn.shijh.argmous.service.ArgmousService;
+import cn.shijh.argmous.util.AnnotationBeanUtils;
+import lombok.Setter;
+import org.aopalliance.intercept.Joinpoint;
+import org.apache.tomcat.util.security.MD5Encoder;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -17,129 +25,83 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.Cache;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.lang.annotation.Annotation;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Aspect
+@Setter
 public class ParamCheckAdvice implements Ordered, InitializingBean {
 
     private int order = 1;
 
-    private ApplicationContext applicationContext;
+    private ArgmousService argmousService;
 
-    private ValidationManager validationManager;
+    private SpringArgumentInfoFactory argumentInfoFactory;
 
-    private ArrayValidationManager arrayValidationManager;
+    private ValidationRuleFactory validationRuleFactory;
 
     private Cache cache;
 
-    //region setter
-    public void setOrder(int order) {
-        this.order = order;
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
-
-    public void setValidationManager(ValidationManager validationManager) {
-        this.validationManager = validationManager;
-    }
-
-    public void setCache(Cache cache) {
-        this.cache = cache;
-    }
-
-    public void setArrayValidationManager(ArrayValidationManager arrayValidationManager) {
-        this.arrayValidationManager = arrayValidationManager;
-    }
-    //endregion
-
-    @Pointcut("@annotation(ParamCheck)")
+    @Pointcut("@annotation(cn.shijh.argmous.annotation.ParamCheck)")
     public void pointCut() {
     }
 
-    @Pointcut("@annotation(ParamChecks)")
+    @Pointcut("@annotation(cn.shijh.argmous.annotation.ParamChecks)")
     public void multiParamCheck() {
     }
 
-    @Pointcut("@annotation(ArrayParamCheck)")
+    @Pointcut("@annotation(cn.shijh.argmous.annotation.ArrayParamCheck)")
     public void arrayParamChecks() {
     }
 
-    private Collection<ValidationRule> getValidationRules(JoinPoint jp) {
-        ParamChecks annotation = getAnnotation(jp, ParamChecks.class);
-        return getValidationRules(annotation.value());
-    }
-
-    private Collection<ValidationRule> getValidationRules(ParamCheck[] paramChecks) {
-        Collection<ValidationRule> rules = new ArrayList<>(paramChecks.length);
-        for (ParamCheck paramCheck : paramChecks) {
-            ValidationRule validationRule = getRuleFromAnnotation(paramCheck);
-            rules.add(validationRule);
-        }
-        return rules;
-    }
-
-    private ValidationRule getRuleFromAnnotation(ParamCheck annotation) {
-        ValidationRule validationRule = new ValidationRule();
-        if (annotation != null) {
-            AnnotationBeanUtils.copyProperties(annotation, validationRule);
-        }
-        return validationRule;
-    }
-
-    private ValidationRule getValidationRule(JoinPoint jp) {
-        String name = jp.getSignature().getName();
-        ValidationRule cacheRule = cache.get(name, ValidationRule.class);
-        if (cacheRule == null) {
-            ParamCheck annotation = getAnnotation(jp, ParamCheck.class);
-            cacheRule =  getRuleFromAnnotation(annotation);
-            cache.put(name, cacheRule);
-        }
-        return cacheRule;
-    }
-
-    private boolean isSpringObject(Object arg) {
-        if (arg == null) return false;
-        try {
-            applicationContext.getBean(arg.getClass());
-            return true;
-        } catch (BeansException e) {
-            return false;
-        }
-    }
 
     private <T extends Annotation> T getAnnotation(JoinPoint jp, Class<T> annotationType) {
         return ((MethodSignature) jp.getSignature()).getMethod().getAnnotation(annotationType);
     }
 
+    @SuppressWarnings("unchecked")
+    private Collection<ValidationRule> getValidationRules(ParamCheck[] paramChecks, String id) {
+        Collection<ValidationRule> rules = cache.get(id, Collection.class);
+        if (rules == null) {
+            rules = validationRuleFactory.createFromAnnotations(paramChecks);
+            cache.put(id, rules);
+        }
+        return rules;
+    }
+
+    private String getDefaultId(JoinPoint jp) {
+        byte[] bytes = jp.toShortString().getBytes(StandardCharsets.UTF_8);
+        return MD5Encoder.encode(bytes);
+    }
+
     @Before(value = "pointCut()")
     public void paramCheck(JoinPoint jp) throws ParamCheckException {
-        List<ArgumentInfo> argumentInfos = ArgumentUtils.wrapper(jp, this::isSpringObject);
-        ValidationRule validationRule = getValidationRule(jp);
-        validationManager.validate(argumentInfos, validationRule);
+        ParamCheck annotation = getAnnotation(jp, ParamCheck.class);
+        Collection<ValidationRule> validationRules = getValidationRules(new ParamCheck[]{annotation}, getDefaultId(jp));
+        Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
+        argmousService.paramCheck(argumentInfos, validationRules);
     }
 
     @Before(value = "multiParamCheck()")
     public void paramChecks(JoinPoint jp) throws ParamCheckException {
-        List<ArgumentInfo> argumentInfos = ArgumentUtils.wrapper(jp, this::isSpringObject);
-        Collection<ValidationRule> validationRule = getValidationRules(jp);
-        for (ValidationRule rule : validationRule) {
-            validationManager.validate(argumentInfos, rule);
-        }
+        Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
+        ParamChecks annotation = getAnnotation(jp, ParamChecks.class);
+        String id = annotation.id().isEmpty() ? getDefaultId(jp) : annotation.id();
+        Collection<ValidationRule> validationRule = getValidationRules(annotation.value(), id);
+        argmousService.paramCheck(argumentInfos, validationRule);
     }
 
     @Before(value = "arrayParamChecks()")
     public void arrayParamChecks(JoinPoint jp) throws ParamCheckException {
-        List<ArgumentInfo> args = ArgumentUtils.wrapper(jp, null);
+        Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
         ArrayParamCheck annotation = getAnnotation(jp, ArrayParamCheck.class);
-        Collection<ValidationRule> rules = getValidationRules(annotation.value());
-        arrayValidationManager.validate(args, rules, annotation.target());
+        String id = annotation.id().isEmpty() ? getDefaultId(jp) : annotation.id();
+        Collection<ValidationRule> validationRule = getValidationRules(annotation.value(), id);
+        argmousService.arrayParamCheck(argumentInfos, validationRule, annotation.target());
     }
 
     @Override
@@ -149,14 +111,8 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws IllegalStateException {
-        if (validationManager == null) {
-            throw new IllegalStateException("required validation manager");
-        }
-        if (arrayValidationManager == null) {
-            throw new IllegalStateException("required array validation manager");
-        }
-        if (applicationContext == null) {
-            throw new IllegalStateException("required application context");
+        if (argmousService == null) {
+            throw new IllegalStateException("required argmous service");
         }
     }
 }
