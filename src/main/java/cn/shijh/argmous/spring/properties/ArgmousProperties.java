@@ -8,4 +8,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ArgmousProperties {
     private Boolean enable = true;
     private Integer order;
+    private String cacheName = "argmous:spring:cache";
 }
