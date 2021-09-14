@@ -1,4 +1,4 @@
-package cn.shijh.argmous.spring.context;
+package cn.shijh.argmous.spring.factory;
 
 import cn.shijh.argmous.model.ArgumentInfo;
 import org.aspectj.lang.JoinPoint;
