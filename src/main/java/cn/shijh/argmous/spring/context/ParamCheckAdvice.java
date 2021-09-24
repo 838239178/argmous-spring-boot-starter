@@ -56,8 +56,9 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
     @Before(value = "pointCut()")
     public void paramCheck(JoinPoint jp) throws ParamCheckException {
         ParamCheck annotation = JoinPointUtils.getAnnotation(jp, ParamCheck.class);
-        Collection<ValidationRule> validationRules = validationRuleFactory.getRulesOrElsePut(getDefaultId(jp), new ParamCheck[]{annotation});
         Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
+        Collection<ValidationRule> validationRules = validationRuleFactory
+                .getRulesOrElsePut(getDefaultId(jp), new ParamCheck[]{annotation}, argumentInfos);
         argmousService.paramCheck(argumentInfos, validationRules);
     }
 
@@ -66,7 +67,7 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
         Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
         ParamChecks annotation = JoinPointUtils.getAnnotation(jp, ParamChecks.class);
         String id = annotation.id().isEmpty() ? getDefaultId(jp) : annotation.id();
-        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value());
+        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value(), argumentInfos);
         argmousService.paramCheck(argumentInfos, validationRule);
     }
 
@@ -75,7 +76,7 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
         Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
         ArrayParamCheck annotation = JoinPointUtils.getAnnotation(jp, ArrayParamCheck.class);
         String id = annotation.id().isEmpty() ? getDefaultId(jp) : annotation.id();
-        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value());
+        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value(), argumentInfos);
         argmousService.arrayParamCheck(argumentInfos, validationRule, annotation.target());
     }
 

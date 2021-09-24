@@ -3,6 +3,8 @@ package cn.shijh.argmous.spring.starter;
 
 import cn.shijh.argmous.factory.ValidationRuleFactory;
 import cn.shijh.argmous.factory.rule.DefaultValidationRuleFactory;
+import cn.shijh.argmous.handler.RuleMixHandler;
+import cn.shijh.argmous.handler.impl.MethodToBeanRuleMixHandler;
 import cn.shijh.argmous.manager.validation.ArrayValidationManager;
 import cn.shijh.argmous.manager.validation.ValidationManager;
 import cn.shijh.argmous.service.ArgmousService;
@@ -64,13 +66,18 @@ public class ArgmousAutoConfiguration {
     }
 
     @Bean
-    public CacheablesValidationRuleFactory cacheablesValidationRuleFactory(ValidationRuleFactory validationRuleFactory) {
+    public RuleMixHandler ruleMixHandler() {
+        return new MethodToBeanRuleMixHandler();
+    }
+
+    @Bean
+    public CacheablesValidationRuleFactory cacheablesValidationRuleFactory(ValidationRuleFactory validationRuleFactory, RuleMixHandler mixHandler) {
         CacheManager availableCacheManager = cacheManager.getIfAvailable(NoCacheManager::new);
         String cacheName = properties.getCacheName();
         if (cacheName == null || cacheName.isEmpty()) {
             cacheName = "argmous:spring:cache";
         }
-        return new CacheablesValidationRuleFactoryImpl(validationRuleFactory, availableCacheManager.getCache(cacheName));
+        return new CacheablesValidationRuleFactoryImpl(validationRuleFactory, availableCacheManager.getCache(cacheName), mixHandler);
     }
 
     @Bean
