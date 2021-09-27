@@ -1,5 +1,6 @@
 package cn.shijh.argmous.spring.factory;
 
+import cn.shijh.argmous.annotation.ArrayParamCheck;
 import cn.shijh.argmous.annotation.ParamCheck;
 import cn.shijh.argmous.model.ArgumentInfo;
 import cn.shijh.argmous.model.ValidationRule;
@@ -8,4 +9,6 @@ import java.util.Collection;
 
 public interface CacheablesValidationRuleFactory {
     Collection<ValidationRule> getRulesOrElsePut(String id, ParamCheck[] defaults, Collection<ArgumentInfo> args);
+    
+    Collection<ValidationRule> getRulesOrElsePut(String id, ArrayParamCheck defaults, Collection<ArgumentInfo> fromMethod, Collection<ArgumentInfo> fromArray);
 }

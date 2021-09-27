@@ -27,10 +27,11 @@ public class TestComponent {
         System.out.println("pass");
     }
 
-    @ArrayParamCheck(id="test3", value = {
-            @ParamCheck(include = "string", size = {2,-1}, regexp = "a.*"),
-            @ParamCheck(include = {"integer", "aDouble"}, range = {"1", "10"})
-    })
+    @ArrayParamCheck(id = "test3", value = {
+            @ParamCheck(include = "string", size = {2, -1}, regexp = "a.*"),
+            @ParamCheck(include = {"integer", "aDouble"}, range = {"1", "10"}),
+            @ParamCheck(include = "int2", range = {"10", "100"})
+    }, target = "dataList")
     public void arrayTest(List<TestData> dataList) {
         System.out.println("pass");
     }

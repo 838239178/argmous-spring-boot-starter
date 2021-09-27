@@ -13,6 +13,9 @@ public class TestData {
     @Range({"1000",""})
     private Integer integer;
 
+    @Range({"-1", "2"})
+    private Integer int2;
+
     private Double aDouble;
 
     private List<String> list;

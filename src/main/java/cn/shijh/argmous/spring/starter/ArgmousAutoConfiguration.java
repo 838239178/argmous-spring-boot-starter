@@ -2,10 +2,9 @@ package cn.shijh.argmous.spring.starter;
 
 
 import cn.shijh.argmous.factory.ValidationRuleFactory;
-import cn.shijh.argmous.factory.rule.DefaultValidationRuleFactory;
+import cn.shijh.argmous.factory.impl.DefaultValidationRuleFactory;
 import cn.shijh.argmous.handler.RuleMixHandler;
 import cn.shijh.argmous.handler.impl.MethodToBeanRuleMixHandler;
-import cn.shijh.argmous.manager.validation.ArrayValidationManager;
 import cn.shijh.argmous.manager.validation.ValidationManager;
 import cn.shijh.argmous.service.ArgmousService;
 import cn.shijh.argmous.service.impl.ArgmousServiceImpl;
@@ -37,22 +36,19 @@ import org.springframework.context.annotation.Configuration;
 public class ArgmousAutoConfiguration {
     private final ArgmousProperties properties;
     private final ValidationManager validationManager;
-    private final ArrayValidationManager arrayValidationManager;
     private final ObjectProvider<CacheManager> cacheManager;
 
     public ArgmousAutoConfiguration(ArgmousProperties properties,
                                     ObjectProvider<ValidationManager> validationManager,
-                                    ObjectProvider<ArrayValidationManager> arrayValidationManager,
                                     ObjectProvider<CacheManager> cacheManager) {
         this.properties = properties;
         this.validationManager = validationManager.getIfAvailable();
-        this.arrayValidationManager = arrayValidationManager.getIfAvailable();
         this.cacheManager = cacheManager;
     }
 
     @Bean
     public ArgmousService argmousService() {
-        return new ArgmousServiceImpl(validationManager, arrayValidationManager);
+        return new ArgmousServiceImpl(validationManager);
     }
 
     @Bean

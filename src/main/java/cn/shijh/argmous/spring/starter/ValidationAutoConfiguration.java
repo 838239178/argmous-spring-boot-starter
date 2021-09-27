@@ -2,7 +2,6 @@ package cn.shijh.argmous.spring.starter;
 
 
 
-import cn.shijh.argmous.manager.validation.ArrayValidationManager;
 import cn.shijh.argmous.manager.validation.ValidationManager;
 import cn.shijh.argmous.manager.validation.impl.DefaultValidationManager;
 import cn.shijh.argmous.manager.validator.ValidatorManager;
@@ -29,12 +28,6 @@ public class ValidationAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ValidationManager.class)
     public ValidationManager validationManager(ObjectProvider<ValidatorManager> validatorManager) {
-        return new DefaultValidationManager(validatorManager.getIfAvailable());
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(ArrayValidationManager.class)
-    public ArrayValidationManager arrayValidationManager(ObjectProvider<ValidatorManager> validatorManager) {
         return new DefaultValidationManager(validatorManager.getIfAvailable());
     }
 

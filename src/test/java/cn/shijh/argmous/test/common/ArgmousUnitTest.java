@@ -45,8 +45,9 @@ public class ArgmousUnitTest {
     void test3() throws Exception {
         TestData data = new TestData();
         data.setADouble(1.3);
-        data.setInteger(99);
+        data.setInteger(9);
         data.setList(Arrays.asList("1","2"));
+        data.setInt2(50);
         data.setString("asa");
         testComponent.arrayTest(Arrays.asList(data,data,data));
     }
