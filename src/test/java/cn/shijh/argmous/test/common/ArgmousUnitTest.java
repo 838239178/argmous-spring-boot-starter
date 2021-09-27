@@ -45,8 +45,9 @@ public class ArgmousUnitTest {
     void test3() throws Exception {
         TestData data = new TestData();
         data.setADouble(1.3);
-        data.setInteger(99);
+        data.setInteger(9);
         data.setList(Arrays.asList("1","2"));
+        data.setInt2(50);
         data.setString("asa");
         testComponent.arrayTest(Arrays.asList(data,data,data));
     }
@@ -60,6 +61,25 @@ public class ArgmousUnitTest {
             data.setList(Arrays.asList("1","2"));
             data.setString("bsa");
             testComponent.test(data);
+            throw new IllegalStateException("cn.shijh.argmous.test fail");
+        } catch (ParamCheckException e) {
+            System.out.println("pass:" + e.getMessage());
+        }
+    }
+
+    @Test
+    void test5() throws Exception {
+        TestData data = new TestData();
+        data.setList(Arrays.asList("1","2"));
+        data.setString("asa");
+        data.setADouble(1.3);
+        data.setInteger(2000);
+        //bean annotation mathes "integer" >= 1000
+        testComponent.test2(data);
+        try {
+            data.setInteger(1);
+            //bean annotation not mathes "integer" >= 1000
+            testComponent.test2(data);
             throw new IllegalStateException("cn.shijh.argmous.test fail");
         } catch (ParamCheckException e) {
             System.out.println("pass:" + e.getMessage());

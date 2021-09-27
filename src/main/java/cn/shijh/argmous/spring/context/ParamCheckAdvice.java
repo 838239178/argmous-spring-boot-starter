@@ -23,6 +23,9 @@ import org.springframework.core.Ordered;
 import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 @Aspect
 @Setter
@@ -56,8 +59,9 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
     @Before(value = "pointCut()")
     public void paramCheck(JoinPoint jp) throws ParamCheckException {
         ParamCheck annotation = JoinPointUtils.getAnnotation(jp, ParamCheck.class);
-        Collection<ValidationRule> validationRules = validationRuleFactory.getRulesOrElsePut(getDefaultId(jp), new ParamCheck[]{annotation});
         Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
+        Collection<ValidationRule> validationRules = validationRuleFactory
+                .getRulesOrElsePut(getDefaultId(jp), new ParamCheck[]{annotation}, argumentInfos);
         argmousService.paramCheck(argumentInfos, validationRules);
     }
 
@@ -66,17 +70,19 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
         Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
         ParamChecks annotation = JoinPointUtils.getAnnotation(jp, ParamChecks.class);
         String id = annotation.id().isEmpty() ? getDefaultId(jp) : annotation.id();
-        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value());
+        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value(), argumentInfos);
         argmousService.paramCheck(argumentInfos, validationRule);
     }
 
     @Before(value = "arrayParamChecks()")
     public void arrayParamChecks(JoinPoint jp) throws ParamCheckException {
-        Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp);
+        Collection<ArgumentInfo> fromArray = new LinkedList<>();
+        Collection<ArgumentInfo> fromMethod = new LinkedList<>();
+        Collection<ArgumentInfo> argumentInfos = argumentInfoFactory.createFromJoinPint(jp, fromMethod, fromArray);
         ArrayParamCheck annotation = JoinPointUtils.getAnnotation(jp, ArrayParamCheck.class);
         String id = annotation.id().isEmpty() ? getDefaultId(jp) : annotation.id();
-        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation.value());
-        argmousService.arrayParamCheck(argumentInfos, validationRule, annotation.target());
+        Collection<ValidationRule> validationRule = validationRuleFactory.getRulesOrElsePut(id, annotation, fromMethod, fromArray);
+        argmousService.paramCheck(argumentInfos, validationRule);
     }
 
     @Override
