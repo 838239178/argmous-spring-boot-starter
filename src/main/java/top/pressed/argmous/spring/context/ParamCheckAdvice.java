@@ -1,11 +1,7 @@
 package top.pressed.argmous.spring.context;
 
 
-import top.pressed.argmous.spring.factory.CacheablesValidationRuleFactory;
-import top.pressed.argmous.spring.factory.SpringArgumentInfoFactory;
-import top.pressed.argmous.spring.util.JoinPointUtils;
 import lombok.Setter;
-import org.apache.tomcat.util.security.MD5Encoder;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -19,8 +15,11 @@ import top.pressed.argmous.exception.ParamCheckException;
 import top.pressed.argmous.model.ArgumentInfo;
 import top.pressed.argmous.model.ValidationRule;
 import top.pressed.argmous.service.ArgmousService;
+import top.pressed.argmous.spring.factory.CacheablesValidationRuleFactory;
+import top.pressed.argmous.spring.factory.SpringArgumentInfoFactory;
+import top.pressed.argmous.spring.util.JoinPointUtils;
+import top.pressed.argmous.spring.util.MD5Utils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -49,8 +48,7 @@ public class ParamCheckAdvice implements Ordered, InitializingBean {
     }
 
     private String getDefaultId(JoinPoint jp) {
-        byte[] bytes = jp.toShortString().getBytes(StandardCharsets.UTF_8);
-        return MD5Encoder.encode(bytes);
+        return MD5Utils.encode(jp.toLongString());
     }
 
     @Before(value = "pointCut()")

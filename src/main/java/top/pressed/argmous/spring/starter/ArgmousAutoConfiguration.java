@@ -1,8 +1,25 @@
 package top.pressed.argmous.spring.starter;
 
 
-
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import top.pressed.argmous.ArgmousInitializr;
+import top.pressed.argmous.factory.ValidationRuleFactory;
+import top.pressed.argmous.factory.impl.DefaultValidationRuleFactory;
+import top.pressed.argmous.handler.RuleMixHandler;
+import top.pressed.argmous.handler.impl.MethodToBeanRuleMixHandler;
+import top.pressed.argmous.manager.validation.ValidationManager;
+import top.pressed.argmous.manager.validator.ValidatorManager;
+import top.pressed.argmous.service.ArgmousService;
+import top.pressed.argmous.service.impl.ArgmousServiceImpl;
 import top.pressed.argmous.spring.cache.NoCacheManager;
 import top.pressed.argmous.spring.context.ParamCheckAdvice;
 import top.pressed.argmous.spring.factory.CacheablesValidationRuleFactory;
@@ -10,21 +27,9 @@ import top.pressed.argmous.spring.factory.SpringArgumentInfoFactory;
 import top.pressed.argmous.spring.factory.impl.CacheablesValidationRuleFactoryImpl;
 import top.pressed.argmous.spring.factory.impl.SpringArgumentInfoFactoryImpl;
 import top.pressed.argmous.spring.properties.ArgmousProperties;
+import top.pressed.argmous.validator.RuleValidator;
 
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.CacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import top.pressed.argmous.factory.ValidationRuleFactory;
-import top.pressed.argmous.factory.impl.DefaultValidationRuleFactory;
-import top.pressed.argmous.handler.RuleMixHandler;
-import top.pressed.argmous.handler.impl.MethodToBeanRuleMixHandler;
-import top.pressed.argmous.manager.validation.ValidationManager;
-import top.pressed.argmous.service.ArgmousService;
-import top.pressed.argmous.service.impl.ArgmousServiceImpl;
+import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(
@@ -34,29 +39,36 @@ import top.pressed.argmous.service.impl.ArgmousServiceImpl;
 )
 @EnableConfigurationProperties(ArgmousProperties.class)
 @AutoConfigureAfter(ValidationAutoConfiguration.class)
-public class ArgmousAutoConfiguration {
+public class ArgmousAutoConfiguration implements InitializingBean {
     private final ArgmousProperties properties;
-    private final ValidationManager validationManager;
     private final ObjectProvider<CacheManager> cacheManager;
 
+    private final ApplicationContext context;
+
     public ArgmousAutoConfiguration(ArgmousProperties properties,
-                                    ObjectProvider<ValidationManager> validationManager,
-                                    ObjectProvider<CacheManager> cacheManager) {
+                                    ObjectProvider<CacheManager> cacheManager,
+                                    ApplicationContext context) {
         this.properties = properties;
-        this.validationManager = validationManager.getIfAvailable();
         this.cacheManager = cacheManager;
+        this.context = context;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public ArgmousService argmousService() {
-        return new ArgmousServiceImpl(validationManager);
+        return new ArgmousServiceImpl();
     }
 
     @Bean
     @ConditionalOnMissingBean
     public SpringArgumentInfoFactory springArgumentInfoFactory() {
-        return new SpringArgumentInfoFactoryImpl();
+        CacheManager availableCacheManager = cacheManager.getIfAvailable(NoCacheManager::new);
+        String cacheName = properties.getCacheName();
+        if (cacheName == null || cacheName.isEmpty()) {
+            cacheName = "argmous:rules:spring:cache";
+        }
+        cacheName += ":args";
+        return new SpringArgumentInfoFactoryImpl(availableCacheManager.getCache(cacheName));
     }
 
     @Bean
@@ -79,6 +91,7 @@ public class ArgmousAutoConfiguration {
         if (cacheName == null || cacheName.isEmpty()) {
             cacheName = "argmous:spring:cache";
         }
+        cacheName += ":rules";
         return new CacheablesValidationRuleFactoryImpl(validationRuleFactory, availableCacheManager.getCache(cacheName), mixHandler);
     }
 
@@ -95,5 +108,16 @@ public class ArgmousAutoConfiguration {
             advice.setOrder(properties.getOrder());
         }
         return advice;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void afterPropertiesSet() {
+        ArgmousInitializr.initBean(context.getBean(ValidationManager.class));
+        ArgmousInitializr.initBean(context.getBean(ValidatorManager.class));
+        ArgmousInitializr.initBean(context.getBean(ArgmousService.class));
+        List<RuleValidator> validatorList = (List<RuleValidator>) context.getBean("validatorList");
+        ArgmousInitializr.addValidators(validatorList);
+        ArgmousInitializr.finishInit();
     }
 }

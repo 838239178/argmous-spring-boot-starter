@@ -1,7 +1,6 @@
 package top.pressed.argmous.spring.starter;
 
 
-
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +15,6 @@ import top.pressed.argmous.validator.impl.RequiredValidator;
 import top.pressed.argmous.validator.impl.SizeValidator;
 import top.pressed.argmous.validator.impl.ValueRangeValidator;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,20 +25,19 @@ public class ValidationAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ValidationManager.class)
-    public ValidationManager validationManager(ObjectProvider<ValidatorManager> validatorManager) {
-        return new DefaultValidationManager(validatorManager.getIfAvailable());
+    public ValidationManager validationManager() {
+        return new DefaultValidationManager();
     }
 
     @Bean
     @ConditionalOnMissingBean(ValidatorManager.class)
-    public ValidatorManager validatorManager(ObjectProvider<Collection<RuleValidator>> validators) {
-        List<RuleValidator> ruleValidators = defaultValidator();
-        validators.ifAvailable(ruleValidators::addAll);
-        return new DefaultValidatorManager(ruleValidators);
+    public ValidatorManager validatorManager() {
+        return new DefaultValidatorManager();
     }
 
-    public List<RuleValidator> defaultValidator() {
-        return new ArrayList<>(
+    @Bean("validatorList")
+    public List<RuleValidator> defaultValidator(ObjectProvider<Collection<RuleValidator>> validators) {
+        ArrayList<RuleValidator> ruleValidators = new ArrayList<>(
                 Arrays.asList(
                         new RequiredValidator(),
                         new RegexpValidator(),
@@ -48,5 +45,7 @@ public class ValidationAutoConfiguration {
                         new ValueRangeValidator()
                 )
         );
+        validators.ifAvailable(ruleValidators::addAll);
+        return ruleValidators;
     }
 }

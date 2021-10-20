@@ -1,19 +1,44 @@
 package top.pressed.argmous.spring.factory.impl;
 
 
-import top.pressed.argmous.spring.factory.SpringArgumentInfoFactory;
+import com.esotericsoftware.reflectasm.MethodAccess;
+import lombok.AllArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.cache.Cache;
 import top.pressed.argmous.annotation.NotValid;
 import top.pressed.argmous.factory.impl.DefaultArgumentInfoFactory;
 import top.pressed.argmous.model.ArgumentInfo;
+import top.pressed.argmous.spring.factory.SpringArgumentInfoFactory;
 import top.pressed.argmous.util.BeanUtils;
 
 import java.lang.reflect.Parameter;
 import java.util.Collection;
 import java.util.LinkedList;
 
+@AllArgsConstructor
 public class SpringArgumentInfoFactoryImpl extends DefaultArgumentInfoFactory implements SpringArgumentInfoFactory {
+
+    protected Cache cache;
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Collection<ArgumentInfo> createFromFields(Object arg, String name, Class<?> argType) {
+        Collection<ArgumentInfo> fieldInfo = cache.get("fields:" + argType.getName(), Collection.class);
+        if (fieldInfo == null) {
+            fieldInfo = super.createFromFields(arg, name, argType);
+            cache.put("fields:" + argType.getName(), fieldInfo);
+        } else {
+            MethodAccess methodAccess = MethodAccess.get(argType);
+            for (ArgumentInfo argumentInfo : fieldInfo) {
+                Object value = methodAccess.invoke(arg, BeanUtils.getterName(argumentInfo.getName()));
+                argumentInfo.setValue(value);
+                argumentInfo.setBelongTo(name);
+            }
+        }
+        return fieldInfo;
+    }
+
     @Override
     public Collection<ArgumentInfo> createFromJoinPint(JoinPoint jp, Collection<ArgumentInfo> fromMethod, Collection<ArgumentInfo> fromArray) {
         MethodSignature signature = (MethodSignature) jp.getSignature();
