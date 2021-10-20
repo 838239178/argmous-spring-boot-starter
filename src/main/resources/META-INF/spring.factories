@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration = cn.shijh.argmous.spring.starter.ValidationAutoConfiguration, cn.shijh.argmous.spring.starter.ArgmousAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration = top.pressed.argmous.spring.starter.ValidationAutoConfiguration, top.pressed.argmous.spring.starter.ArgmousAutoConfiguration

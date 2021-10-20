@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cn.shijh</groupId>
+    <groupId>top.pressed</groupId>
     <artifactId>argmous-spring-boot-starter</artifactId>
-    <version>1.1.1-BETA</version>
+    <version>1.1.3-BETA</version>
 
     <properties>
         <java.version>1.8</java.version>
-        <argmous.version>1.1.1-BETA</argmous.version>
+        <argmous.version>1.1.3-BETA</argmous.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>2.3.7.RELEASE</spring-boot.version>
@@ -21,6 +21,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -43,7 +48,7 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>cn.shijh</groupId>
+            <groupId>top.pressed</groupId>
             <artifactId>argmous</artifactId>
             <version>${argmous.version}</version>
         </dependency>
