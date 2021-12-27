@@ -8,19 +8,17 @@ Argmous2.0 SpringBoot 开箱即用
 
 ```xml
 
-<project>
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-    <dependencies>
-        <dependency>
-            <groupId>top.pressed</groupId>
-            <artifactId>argmous-spring-boot-starter</artifactId>
-            <version>{See release for newest}</version>
-        </dependency>
-    </dependencies>
-</project>
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+<dependencies>
+<dependency>
+    <groupId>top.pressed</groupId>
+    <artifactId>argmous-spring-boot-starter</artifactId>
+    <version>{See release for newest}</version>
+</dependency>
+</dependencies>
 ```
