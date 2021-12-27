@@ -19,8 +19,8 @@ import top.pressed.argmous.factory.impl.SimpleArgumentInfoFactory;
 import top.pressed.argmous.handler.RuleAnnotationProcessor;
 import top.pressed.argmous.handler.RuleMixHandler;
 import top.pressed.argmous.handler.impl.TopologyMixingHandler;
-import top.pressed.argmous.manager.validation.ValidationManager;
-import top.pressed.argmous.manager.validator.ValidatorManager;
+import top.pressed.argmous.manager.ValidationManager;
+import top.pressed.argmous.manager.ValidatorManager;
 import top.pressed.argmous.service.ArgmousService;
 import top.pressed.argmous.service.impl.ArgmousServiceImpl;
 import top.pressed.argmous.spring.cache.NoCacheManager;
@@ -31,7 +31,6 @@ import top.pressed.argmous.spring.factory.CacheableMethodRuleFactory;
 import top.pressed.argmous.spring.properties.ArgmousProperties;
 import top.pressed.argmous.validator.RuleValidator;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
@@ -78,9 +77,9 @@ public class ArgmousAutoConfiguration implements InitializingBean {
         }
         cacheName += ":rules";
         Cache cache = availableCacheManager.getCache(cacheName);
-        return new CacheableCompositeRuleFactory(Arrays.asList(
-                new CacheableMethodRuleFactory(cache), new CacheableBeanRuleFactory(cache)
-        ), ruleMixHandler, cache);
+        ArgmousInitializr.initBean(new CacheableBeanRuleFactory(cache));
+        ArgmousInitializr.initBean(new CacheableMethodRuleFactory(cache));
+        return new CacheableCompositeRuleFactory(cache);
     }
 
     @Bean
@@ -107,11 +106,13 @@ public class ArgmousAutoConfiguration implements InitializingBean {
         ArgmousInitializr.initBean(context.getBean(ValidationManager.class));
         ArgmousInitializr.initBean(context.getBean(ValidatorManager.class));
         ArgmousInitializr.initBean(context.getBean(ArgmousService.class));
+        ArgmousInitializr.initBean(context.getBean(RuleMixHandler.class));
         ArgmousInitializr.initBean(context.getBean(ValidationRuleFactory.class));
         ArgmousInitializr.initBean(context.getBean(ArgumentInfoFactory.class));
         ArgmousInitializr.initBean(new RuleAnnotationProcessor());
+        ArgmousInitializr.finishInit();
+        //add validators
         List<RuleValidator> validatorList = (List<RuleValidator>) context.getBean("validatorList");
         ArgmousInitializr.addValidators(validatorList);
-        ArgmousInitializr.finishInit();
     }
 }
