@@ -3,6 +3,7 @@ package top.pressed.argmous.spring.factory;
 import lombok.var;
 import org.springframework.cache.Cache;
 import top.pressed.argmous.exception.RuleCreateException;
+import top.pressed.argmous.factory.ValidationRuleFactory;
 import top.pressed.argmous.factory.impl.CompositeRuleFactory;
 import top.pressed.argmous.model.ValidationRule;
 import top.pressed.argmous.spring.util.MethodUtil;
@@ -14,6 +15,11 @@ public class CacheableCompositeRuleFactory extends CompositeRuleFactory {
     private final Cache cache;
 
     public CacheableCompositeRuleFactory(Cache cache) {
+        this.cache = cache;
+    }
+
+    public CacheableCompositeRuleFactory(Cache cache, Collection<ValidationRuleFactory> factories) {
+        super(factories);
         this.cache = cache;
     }
 

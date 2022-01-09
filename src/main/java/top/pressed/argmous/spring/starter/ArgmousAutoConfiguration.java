@@ -31,6 +31,7 @@ import top.pressed.argmous.spring.factory.CacheableMethodRuleFactory;
 import top.pressed.argmous.spring.properties.ArgmousProperties;
 import top.pressed.argmous.validator.RuleValidator;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
@@ -77,9 +78,7 @@ public class ArgmousAutoConfiguration implements InitializingBean {
         }
         cacheName += ":rules";
         Cache cache = availableCacheManager.getCache(cacheName);
-        ArgmousInitializr.initBean(new CacheableBeanRuleFactory(cache));
-        ArgmousInitializr.initBean(new CacheableMethodRuleFactory(cache));
-        return new CacheableCompositeRuleFactory(cache);
+        return new CacheableCompositeRuleFactory(cache, Arrays.asList(new CacheableMethodRuleFactory(cache), new CacheableBeanRuleFactory(cache)));
     }
 
     @Bean
