@@ -70,7 +70,7 @@ public class ArgmousAutoConfiguration implements InitializingBean {
 
     @Bean
     @ConditionalOnMissingBean
-    public ValidationRuleFactory validationRuleFactory(RuleMixHandler ruleMixHandler) {
+    public ValidationRuleFactory validationRuleFactory() {
         CacheManager availableCacheManager = cacheManager.getIfAvailable(NoCacheManager::new);
         String cacheName = properties.getCacheName();
         if (cacheName == null || cacheName.isEmpty()) {
@@ -78,7 +78,11 @@ public class ArgmousAutoConfiguration implements InitializingBean {
         }
         cacheName += ":rules";
         Cache cache = availableCacheManager.getCache(cacheName);
-        return new CacheableCompositeRuleFactory(cache, Arrays.asList(new CacheableMethodRuleFactory(cache), new CacheableBeanRuleFactory(cache)));
+        CacheableBeanRuleFactory bf = new CacheableBeanRuleFactory(cache);
+        CacheableMethodRuleFactory mf = new CacheableMethodRuleFactory(cache);
+        ArgmousInitializr.initBean(bf);
+        ArgmousInitializr.initBean(mf);
+        return new CacheableCompositeRuleFactory(cache, Arrays.asList(bf, mf));
     }
 
     @Bean

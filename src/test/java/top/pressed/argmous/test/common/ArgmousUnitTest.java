@@ -1,12 +1,12 @@
 package top.pressed.argmous.test.common;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import top.pressed.argmous.exception.ParamCheckException;
 import top.pressed.argmous.test.TestApplication;
 import top.pressed.argmous.test.TestComponent;
 import top.pressed.argmous.test.TestData;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Arrays;
 
@@ -17,16 +17,18 @@ public class ArgmousUnitTest {
     private TestComponent testComponent;
 
     @Test
+        //Method覆盖Bean失败
     void test1() throws Exception {
         TestData data = new TestData();
-        data.setADouble(1.3);
-        data.setInteger(9);
-        data.setList(Arrays.asList("1","2"));
+        data.setADouble(1.5);
+        data.setInteger(5);
+        data.setList(Arrays.asList("1", "2"));
         data.setString("asa");
         testComponent.test(data);
     }
 
     @Test
+        //Method覆盖Bean失败
     void test2() throws Exception {
         try {
             TestData data = new TestData();
@@ -42,6 +44,7 @@ public class ArgmousUnitTest {
     }
 
     @Test
+        //Method覆盖Bean失败
     void test3() throws Exception {
         TestData data = new TestData();
         data.setADouble(1.3);
