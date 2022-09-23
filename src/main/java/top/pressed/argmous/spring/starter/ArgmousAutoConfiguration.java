@@ -1,6 +1,7 @@
 package top.pressed.argmous.spring.starter;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -34,6 +35,7 @@ import top.pressed.argmous.validator.RuleValidator;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(
         prefix = "spring.argmous", name = "enable",
@@ -45,15 +47,18 @@ import java.util.List;
 public class ArgmousAutoConfiguration implements InitializingBean {
     private final ArgmousProperties properties;
     private final ObjectProvider<CacheManager> cacheManager;
+    private final ArgmousInitializr initializr;
 
     private final ApplicationContext context;
 
     public ArgmousAutoConfiguration(ArgmousProperties properties,
                                     ObjectProvider<CacheManager> cacheManager,
-                                    ApplicationContext context) {
+                                    ApplicationContext context,
+                                    ObjectProvider<ArgmousInitializr> initializr) {
         this.properties = properties;
         this.cacheManager = cacheManager;
         this.context = context;
+        this.initializr = initializr.getIfAvailable(ArgmousInitializr::new);
     }
 
     @Bean
@@ -80,8 +85,8 @@ public class ArgmousAutoConfiguration implements InitializingBean {
         Cache cache = availableCacheManager.getCache(cacheName);
         CacheableBeanRuleFactory bf = new CacheableBeanRuleFactory(cache);
         CacheableMethodRuleFactory mf = new CacheableMethodRuleFactory(cache);
-        ArgmousInitializr.initBean(bf);
-        ArgmousInitializr.initBean(mf);
+        initializr.initBean(bf);
+        initializr.initBean(mf);
         return new CacheableCompositeRuleFactory(cache, Arrays.asList(bf, mf));
     }
 
@@ -106,16 +111,16 @@ public class ArgmousAutoConfiguration implements InitializingBean {
     @Override
     @SuppressWarnings("unchecked")
     public void afterPropertiesSet() {
-        ArgmousInitializr.initBean(context.getBean(ValidationManager.class));
-        ArgmousInitializr.initBean(context.getBean(ValidatorManager.class));
-        ArgmousInitializr.initBean(context.getBean(ArgmousService.class));
-        ArgmousInitializr.initBean(context.getBean(RuleMixHandler.class));
-        ArgmousInitializr.initBean(context.getBean(ValidationRuleFactory.class));
-        ArgmousInitializr.initBean(context.getBean(ArgumentInfoFactory.class));
-        ArgmousInitializr.initBean(new RuleAnnotationProcessor());
-        ArgmousInitializr.finishInit();
+        initializr.initBean(context.getBean(ValidationManager.class));
+        initializr.initBean(context.getBean(ValidatorManager.class));
+        initializr.initBean(context.getBean(ArgmousService.class));
+        initializr.initBean(context.getBean(RuleMixHandler.class));
+        initializr.initBean(context.getBean(ValidationRuleFactory.class));
+        initializr.initBean(context.getBean(ArgumentInfoFactory.class));
+        initializr.initBean(new RuleAnnotationProcessor());
+        initializr.finishInit();
         //add validators
         List<RuleValidator> validatorList = (List<RuleValidator>) context.getBean("validatorList");
-        ArgmousInitializr.addValidators(validatorList);
+        initializr.addValidators(validatorList);
     }
 }
